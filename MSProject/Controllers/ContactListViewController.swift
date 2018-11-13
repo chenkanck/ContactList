@@ -10,6 +10,7 @@ import UIKit
 
 private let contactDetailCellIdentifier = "contactDetailCellIdentifier"
 private let contactAvatarCellIdentifier = "contactAvatarCellIdentifier"
+private let avatarCellWidth: CGFloat = 84.0
 
 class ContactListViewController: UIViewController {
     private var contactCollectionView: UICollectionView!
@@ -61,6 +62,9 @@ class ContactListViewController: UIViewController {
         self.view = view
     }
 
+    private var placeHolderViewSize: CGSize {
+        return CGSize(width: (contactCollectionView.frame.width - avatarCellWidth)/2, height: avatarCellWidth)
+    }
     override func viewDidLoad() {
         super.viewDidLoad()
         title = "Contact"
@@ -71,6 +75,8 @@ class ContactListViewController: UIViewController {
         contactCollectionView.dataSource = self
         contactCollectionView.delegate = self
         contactCollectionView.register(ContactAvatarCell.self, forCellWithReuseIdentifier: contactAvatarCellIdentifier)
+        contactCollectionView.register(UICollectionReusableView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionHeader, withReuseIdentifier: "header")
+        contactCollectionView.register(UICollectionReusableView.self, forSupplementaryViewOfKind: UICollectionView.elementKindSectionFooter, withReuseIdentifier: "footer")
         (contactCollectionView.collectionViewLayout as? UICollectionViewFlowLayout)?.scrollDirection = .horizontal
         do {
             try viewModel.loadData()
@@ -96,6 +102,15 @@ extension ContactListViewController: UITableViewDataSource, UITableViewDelegate 
     func tableView(_ tableView: UITableView, heightForRowAt indexPath: IndexPath) -> CGFloat {
         return tableView.frame.height
     }
+
+    func collectionView(_ collectionView: UICollectionView, viewForSupplementaryElementOfKind kind: String, at indexPath: IndexPath) -> UICollectionReusableView {
+        if kind == UICollectionView.elementKindSectionFooter {
+            return contactCollectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "footer", for: indexPath)
+        } else if kind == UICollectionView.elementKindSectionHeader {
+            return contactCollectionView.dequeueReusableSupplementaryView(ofKind: kind, withReuseIdentifier: "header", for: indexPath)
+        }
+        fatalError()
+    }
 }
 
 extension ContactListViewController: UICollectionViewDataSource, UICollectionViewDelegate, UICollectionViewDelegateFlowLayout {
@@ -109,7 +124,23 @@ extension ContactListViewController: UICollectionViewDataSource, UICollectionVie
         return cell
     }
 
+    func collectionView(_ collectionView: UICollectionView, didSelectItemAt indexPath: IndexPath) {
+        collectionView.scrollToItem(at: indexPath, at: .centeredHorizontally, animated: true)
+    }
+
     func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, sizeForItemAt indexPath: IndexPath) -> CGSize {
-        return CGSize(width: 74, height: 74)
+        return CGSize(width: avatarCellWidth, height: avatarCellWidth)
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, minimumLineSpacingForSectionAt section: Int) -> CGFloat {
+        return 0
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForFooterInSection section: Int) -> CGSize {
+        return self.placeHolderViewSize
+    }
+
+    func collectionView(_ collectionView: UICollectionView, layout collectionViewLayout: UICollectionViewLayout, referenceSizeForHeaderInSection section: Int) -> CGSize {
+        return self.placeHolderViewSize
     }
 }
