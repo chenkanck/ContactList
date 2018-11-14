@@ -15,6 +15,7 @@ private let avatarCellWidth: CGFloat = 84.0
 class ContactListViewController: UIViewController {
     private var contactCollectionView: UICollectionView!
     private var contactTableView: UITableView!
+    private var shadowView: UIView!
     private var viewModel = ContactListViewModel()
 
     override func loadView() {
@@ -22,7 +23,12 @@ class ContactListViewController: UIViewController {
         view.backgroundColor = .red
         contactCollectionView = UICollectionView(frame: .zero, collectionViewLayout: UICollectionViewFlowLayout())
         contactCollectionView.backgroundColor = .white
+        contactTableView = UITableView(frame: .zero, style: .plain)
+        shadowView = UIView(frame: .zero)
+        view.addSubview(contactTableView)
+        view.addSubview(shadowView)
         view.addSubview(contactCollectionView)
+
         contactCollectionView.translatesAutoresizingMaskIntoConstraints = false
         view.addConstraints(
             NSLayoutConstraint
@@ -39,8 +45,23 @@ class ContactListViewController: UIViewController {
                              views: ["collectionView": contactCollectionView])
         )
 
-        contactTableView = UITableView(frame: .zero, style: .plain)
-        view.addSubview(contactTableView)
+        shadowView.isHidden = true
+        shadowView.translatesAutoresizingMaskIntoConstraints = false
+        view.addConstraints(
+            NSLayoutConstraint
+                .constraints(withVisualFormat: "H:|[shadowView]|",
+                             options: [],
+                             metrics: nil,
+                             views: ["shadowView": shadowView])
+        )
+        view.addConstraints(
+            NSLayoutConstraint
+                .constraints(withVisualFormat: "V:|-115-[shadowView(5)]",
+                             options: [],
+                             metrics: nil,
+                             views: ["shadowView": shadowView])
+        )
+
         contactTableView.translatesAutoresizingMaskIntoConstraints = false
 
         view.addConstraints(
@@ -91,6 +112,21 @@ class ContactListViewController: UIViewController {
         contactCollectionView.selectItem(at: IndexPath(item: 0, section: 0), animated: false, scrollPosition: UICollectionView.ScrollPosition())
     }
 
+    override func viewDidAppear(_ animated: Bool) {
+        super.viewDidAppear(animated)
+        shadowView.layer.shadowColor = UIColor.lightGray.cgColor
+        shadowView.layer.shadowRadius = 2.0
+        shadowView.layer.shadowOffset = CGSize(width: 0, height: 2.0)
+        shadowView.layer.shadowOpacity = 0.8
+        shadowView.layer.masksToBounds = false
+
+        let path = UIBezierPath()
+        path.move(to: .zero)
+        path.addLine(to: CGPoint(x: shadowView.frame.width, y: 0))
+        path.addQuadCurve(to: .zero, controlPoint: CGPoint(x: shadowView.frame.width/2, y: 4))
+        shadowView.layer.shadowPath = path.cgPath
+    }
+
     // MARK: UIScrollViewDelegate
     func scrollViewDidScroll(_ scrollView: UIScrollView) {
         if scrollView == contactTableView && tableViewMoveBeginPosition != nil {
@@ -133,6 +169,7 @@ class ContactListViewController: UIViewController {
             collectionViewMoveBeginPosition = scrollView.contentOffset
         } else if scrollView == contactTableView {
             tableViewMoveBeginPosition = scrollView.contentOffset
+            shadowView.isHidden = false
         }
     }
 
@@ -174,6 +211,12 @@ class ContactListViewController: UIViewController {
             let forward = beginOffset.x < scrollView.contentOffset.x
             let stopIndex = forward && (endIndex + 1 < viewModel.contacts.count) ? endIndex + 1 : endIndex
             targetContentOffset.pointee.x = CGFloat(stopIndex) * avatarCellWidth
+        }
+    }
+
+    func scrollViewDidEndDragging(_ scrollView: UIScrollView, willDecelerate decelerate: Bool) {
+        if scrollView == contactTableView {
+            shadowView.isHidden = true
         }
     }
 }
